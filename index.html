@@ -167,10 +167,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
     <div class="timer-display" id="timerDisplay">00:00:00</div>
     <div class="controls">
       <button class="btn btn-primary" id="btnStart" onclick="startTimer()" disabled>
-        <i class="ti ti-player-play"></i> iniciar <span class="kbd">space ↑</span>
+        <i class="ti ti-player-play"></i> iniciar <span class="kbd">space</span>
       </button>
       <button class="btn btn-danger" id="btnStop" onclick="stopTimer()" disabled>
-        <i class="ti ti-player-pause"></i> parar e registrar <span class="kbd">space ↓</span>
+        <i class="ti ti-player-pause"></i> parar e registrar <span class="kbd">space</span>
       </button>
       <button class="btn btn-ghost" id="btnCancel" onclick="cancelTimer()" disabled>
         cancelar <span class="kbd">esc</span>
@@ -330,7 +330,6 @@ let startSlot = null;
 let elapsed = 0;
 let charts = {};
 let currentTab = 'fila';
-let spaceHeld = false;
 
 // setup temp state
 let setupDistritos = [];
@@ -478,12 +477,13 @@ function stopTimer() {
 
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-  if (e.code === 'Space') { e.preventDefault(); spaceHeld = true; }
-  if (spaceHeld && e.code === 'ArrowUp') { e.preventDefault(); if (!timerInterval && activeBadge) startTimer(); }
-  if (spaceHeld && e.code === 'ArrowDown') { e.preventDefault(); if (timerInterval) stopTimer(); }
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (!timerInterval) { if (activeBadge) startTimer(); }
+    else stopTimer();
+  }
   if (e.code === 'Escape') { if (timerInterval) cancelTimer(); closeConfirm(); closeSetup(); }
 });
-document.addEventListener('keyup', e => { if (e.code === 'Space') spaceHeld = false; });
 
 function confirmReset() { document.getElementById('confirmModal').classList.add('show'); }
 function closeConfirm() { document.getElementById('confirmModal').classList.remove('show'); }
