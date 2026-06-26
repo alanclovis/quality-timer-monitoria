@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quality Timer (monitoria)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f11;--surface:#18181c;--surface2:#212127;
+  --border:#2e2e38;--border2:#3d3d4d;
+  --text:#e8e8f0;--muted:#8888a0;--hint:#55556a;
+  --purple:#7b6ef6;--purple-dim:#2d2550;--purple-light:#a99ff8;
+  --green:#3ecf8e;--red:#f87171;--amber:#f9a840;
+  --radius:10px;--radius-sm:6px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+.app{max-width:720px;margin:0 auto;padding:2rem 1.25rem 4rem}
+
+/* header */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1.25rem;border-bottom:0.5px solid var(--border)}
+.header-left h1{font-size:16px;font-weight:600;color:var(--text);letter-spacing:-.01em}
+.header-left p{font-size:12px;color:var(--muted);margin-top:2px}
+.header-right{display:flex;align-items:center;gap:8px}
+.date-chip{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:4px 10px}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:var(--radius-sm);border:0.5px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:color .15s,border-color .15s}
+.icon-btn:hover{color:var(--text);border-color:var(--border2)}
+
+.label{font-size:10px;font-weight:600;color:var(--hint);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+
+/* distrito tabs */
+.distrito-tabs{display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap}
+.distrito-tab{padding:6px 16px;font-size:12px;font-weight:500;border:0.5px solid var(--border);border-radius:20px;background:var(--surface);color:var(--muted);cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+.distrito-tab:hover{border-color:var(--border2);color:var(--text)}
+.distrito-tab.active{background:var(--purple-dim);border-color:var(--purple);color:var(--purple-light)}
+
+/* badge grid */
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:6px;margin-bottom:1.75rem}
+.badge-btn{padding:9px 12px;font-size:12px;font-family:'Inter',sans-serif;border:0.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--muted);cursor:pointer;text-align:left;line-height:1.35;transition:all .15s;word-break:break-word}
+.badge-btn:hover{border-color:var(--border2);color:var(--text)}
+.badge-btn.active{background:var(--purple-dim);border-color:var(--purple);color:var(--purple-light);font-weight:500}
+
+/* timer */
+.timer-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem}
+.timer-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.25rem}
+.chip{font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:3px 9px;color:var(--muted)}
+.chip strong{color:var(--text);font-weight:500}
+.timer-display{font-size:52px;font-weight:500;font-family:'JetBrains Mono',monospace;color:var(--text);letter-spacing:-.02em;line-height:1;margin-bottom:1.25rem;transition:color .2s}
+.timer-display.running{color:var(--purple-light)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;border-radius:var(--radius-sm);cursor:pointer;border:none;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--purple);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-danger{background:transparent;color:var(--red);border:0.5px solid var(--red)}
+.btn-danger:hover{background:rgba(248,113,113,.08)}
+.btn-ghost{background:transparent;color:var(--muted);border:0.5px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2)}
+.btn:disabled{opacity:.3;pointer-events:none}
+.kbd{display:inline-block;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--hint);background:var(--surface2);border:0.5px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle}
+
+/* stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.75rem}
+.stat{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:.875rem 1rem}
+.stat-label{font-size:10px;color:var(--hint);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.stat-value{font-size:22px;font-weight:500;font-family:'JetBrains Mono',monospace;color:var(--text)}
+.stat-sub{font-size:10px;color:var(--hint);margin-top:3px}
+
+/* log */
+.log-section{margin-bottom:1.75rem}
+.log-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.log-header-left{display:flex;align-items:center;gap:12px}
+.log-count{font-size:11px;color:var(--hint)}
+.btn-reset{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;font-size:11px;font-family:'Inter',sans-serif;color:var(--hint);background:transparent;border:0.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:color .15s,border-color .15s}
+.btn-reset:hover{color:var(--red);border-color:var(--red)}
+.log-table{width:100%;border-collapse:collapse}
+.log-table th{text-align:left;padding:6px 10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);border-bottom:0.5px solid var(--border)}
+.log-table td{padding:8px 10px;border-bottom:0.5px solid var(--border);color:var(--muted);font-size:12px;vertical-align:middle}
+.log-table tr:last-child td{border-bottom:none}
+.fila-tag{display:inline-block;padding:2px 8px;background:var(--purple-dim);color:var(--purple-light);border-radius:4px;font-size:11px;font-family:'JetBrains Mono',monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dist-tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;background:var(--surface2);color:var(--muted);border:0.5px solid var(--border)}
+.empty{text-align:center;padding:2rem;color:var(--hint);font-size:13px;border:0.5px dashed var(--border);border-radius:var(--radius-sm)}
+
+/* chart */
+.chart-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.75rem}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.chart-tabs{display:flex;gap:4px}
+.tab{padding:4px 12px;font-size:11px;font-weight:500;border:0.5px solid var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.tab.active{background:var(--purple-dim);border-color:var(--purple);color:var(--purple-light)}
+
+/* sync */
+
+/* setup modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--radius);padding:1.75rem;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:1.5rem}
+.modal-section{margin-bottom:1.25rem}
+.modal-section .label{margin-bottom:6px}
+.input{width:100%;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);outline:none;transition:border-color .15s}
+.input:focus{border-color:var(--purple)}
+.input::placeholder{color:var(--hint)}
+.distrito-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.distrito-item{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:12px}
+.distrito-item-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.distrito-name{font-size:13px;font-weight:500;color:var(--text)}
+.btn-remove{background:transparent;border:none;color:var(--hint);cursor:pointer;font-size:16px;padding:0;line-height:1;transition:color .15s}
+.btn-remove:hover{color:var(--red)}
+.badges-input{width:100%;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text);outline:none;resize:vertical;min-height:70px}
+.badges-input:focus{border-color:var(--purple)}
+.badges-hint{font-size:10px;color:var(--hint);margin-top:4px}
+.btn-add-distrito{display:flex;align-items:center;gap:6px;padding:7px 14px;font-size:12px;font-family:'Inter',sans-serif;background:transparent;border:0.5px dashed var(--border2);border-radius:var(--radius-sm);color:var(--muted);cursor:pointer;transition:all .15s;width:100%;justify-content:center}
+.btn-add-distrito:hover{border-color:var(--purple);color:var(--purple-light)}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:1.5rem;padding-top:1rem;border-top:0.5px solid var(--border)}
+
+/* confirm modal */
+.confirm-modal{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--radius);padding:1.5rem;width:360px;max-width:90vw}
+.confirm-modal h3{font-size:15px;font-weight:500;margin-bottom:8px}
+.confirm-modal p{font-size:13px;color:var(--muted);margin-bottom:1.25rem;line-height:1.6}
+
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 16px;font-size:12px;color:var(--text);opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;z-index:300}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* setup vazio */
+.setup-cta{text-align:center;padding:3rem 1rem;border:0.5px dashed var(--border2);border-radius:var(--radius)}
+.setup-cta h2{font-size:16px;font-weight:600;margin-bottom:8px}
+.setup-cta p{font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.6}
+
+@media(max-width:520px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .timer-display{font-size:40px}
+  .badge-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="app" id="mainApp" style="display:none">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>quality timer <span style="color:var(--hint);font-weight:400">(monitoria)</span></h1>
+      <p id="headerSub">monitorias</p>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" onclick="openSetup()" title="Configurações"><i class="ti ti-settings" style="font-size:16px"></i></button>
+      <div class="date-chip" id="dateChip"></div>
+    </div>
+  </div>
+
+  <div class="label">distrito</div>
+  <div class="distrito-tabs" id="distritoTabs"></div>
+
+  <div class="label">badge ativa</div>
+  <div class="badge-grid" id="badgeGrid"></div>
+
+  <div class="timer-card">
+    <div class="timer-meta">
+      <div class="chip">slot <strong id="slotDisplay">—</strong></div>
+      <div class="chip">distrito <strong id="activeDistritoLabel">—</strong></div>
+      <div class="chip">badge <strong id="activeBadgeLabel">nenhuma</strong></div>
+    </div>
+    <div class="timer-display" id="timerDisplay">00:00:00</div>
+    <div class="controls">
+      <button class="btn btn-primary" id="btnStart" onclick="startTimer()" disabled>
+        <i class="ti ti-player-play"></i> iniciar <span class="kbd">space ↑</span>
+      </button>
+      <button class="btn btn-danger" id="btnStop" onclick="stopTimer()" disabled>
+        <i class="ti ti-player-pause"></i> parar e registrar <span class="kbd">space ↓</span>
+      </button>
+      <button class="btn btn-ghost" id="btnCancel" onclick="cancelTimer()" disabled>
+        cancelar <span class="kbd">esc</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">casos hoje</div><div class="stat-value" id="statCases">0</div><div class="stat-sub">registros</div></div>
+    <div class="stat"><div class="stat-label">TS hoje</div><div class="stat-value" id="statTs">0m</div><div class="stat-sub">acumulado</div></div>
+    <div class="stat"><div class="stat-label">média/caso</div><div class="stat-value" id="statAvg">—</div><div class="stat-sub">minutos</div></div>
+    <div class="stat"><div class="stat-label">última fila</div><div class="stat-value" style="font-size:13px;padding-top:4px" id="statLast">—</div><div class="stat-sub">&nbsp;</div></div>
+  </div>
+
+  <div class="log-section">
+    <div class="log-header">
+      <div class="log-header-left">
+        <div class="label" style="margin-bottom:0">registros de hoje</div>
+        <span class="log-count" id="logCount">0 entradas</span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-reset" onclick="openAddOne()" style="color:var(--purple-light);border-color:var(--purple-dim)"><i class="ti ti-plus" style="font-size:12px"></i> +1 registro</button>
+        <button class="btn-reset" onclick="confirmReset()"><i class="ti ti-trash" style="font-size:12px"></i> zerar dia</button>
+      </div>
+    </div>
+    <div id="logWrap"><div class="empty">nenhum registro ainda hoje</div></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="label" style="margin-bottom:0">TS acumulado</div>
+      <div class="chart-tabs">
+        <button class="tab active" onclick="switchTab('fila',this)">por fila</button>
+        <button class="tab" onclick="switchTab('semana',this)">por semana</button>
+      </div>
+    </div>
+    <div id="chartArea"><div class="empty">os gráficos aparecem após o primeiro registro</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-ghost" onclick="exportCSV('today')" style="flex:1;justify-content:center">
+      <i class="ti ti-table-export"></i> exportar hoje (.csv)
+    </button>
+    <button class="btn btn-ghost" onclick="exportCSV('all')" style="flex:1;justify-content:center">
+      <i class="ti ti-database-export"></i> exportar tudo (.csv)
+    </button>
+  </div>
+
+</div>
+
+<!-- setup inicial -->
+<div class="app" id="setupCta" style="display:none">
+  <div class="header">
+    <div class="header-left">
+      <h1>quality timer <span style="color:var(--hint);font-weight:400">(monitoria)</span></h1>
+      <p>configure seus distritos e badges para começar</p>
+    </div>
+    <div class="date-chip" id="dateChip2"></div>
+  </div>
+  <div class="setup-cta">
+    <h2>Bem-vindo(a)!</h2>
+    <p>Configure seus distritos e as badges (filas)<br>de cada um para começar a usar o timer.</p>
+    <button class="btn btn-primary" onclick="openSetup()">
+      <i class="ti ti-settings"></i> configurar agora
+    </button>
+  </div>
+</div>
+
+<!-- setup modal -->
+<div class="modal-overlay" id="setupModal">
+  <div class="modal">
+    <h3>configurações</h3>
+    <div class="modal-sub">Defina seus distritos e as badges de cada um. As badges são as filas que você monitora.</div>
+
+    <div class="modal-section">
+      <div class="label">distritos e badges</div>
+      <div class="distrito-list" id="setupDistritoList"></div>
+      <button class="btn-add-distrito" onclick="addDistrito()">
+        <i class="ti ti-plus"></i> adicionar distrito
+      </button>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn btn-ghost" style="padding:7px 16px;font-size:13px" onclick="closeSetup()">cancelar</button>
+      <button class="btn btn-primary" style="padding:7px 16px;font-size:13px" onclick="saveSetup()">
+        <i class="ti ti-device-floppy"></i> salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- confirm reset modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="confirm-modal">
+    <h3>zerar registros de hoje?</h3>
+    <p>Os registros locais do dia serão apagados permanentemente.</p>
+    <div class="modal-btns" style="margin-top:0;padding-top:0;border-top:none">
+      <button class="btn btn-ghost" style="padding:7px 16px;font-size:13px" onclick="closeConfirm()">cancelar</button>
+      <button class="btn btn-danger" style="padding:7px 16px;font-size:13px" onclick="resetDay()">zerar</button>
+    </div>
+  </div>
+</div>
+
+<!-- +1 modal -->
+<div class="modal-overlay" id="addOneModal">
+  <div class="confirm-modal" style="width:400px">
+    <h3>adicionar registro manual</h3>
+    <p style="margin-bottom:1rem">Qual fila e quanto tempo durou essa monitoria?</p>
+    <div style="margin-bottom:12px">
+      <div class="label" style="margin-bottom:6px">fila</div>
+      <select id="addOneFila" class="input" style="font-size:13px;padding:8px 10px;cursor:pointer">
+        <option value="">selecione a fila...</option>
+      </select>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="label" style="margin-bottom:6px">tempo gasto</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="addOneMin" class="input" style="width:80px;font-size:18px;text-align:center;font-family:'JetBrains Mono',monospace" min="0" value="2" placeholder="0">
+        <span style="color:var(--muted);font-size:13px">min</span>
+        <input type="number" id="addOneSec" class="input" style="width:80px;font-size:18px;text-align:center;font-family:'JetBrains Mono',monospace" min="0" max="59" value="0" placeholder="0">
+        <span style="color:var(--muted);font-size:13px">seg</span>
+      </div>
+      <div style="font-size:10px;color:var(--hint);margin-top:6px">ou use os atalhos rápidos:</div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <button class="btn-reset" onclick="setAddOneTime(1,0)" style="font-size:11px;padding:3px 10px">1min</button>
+        <button class="btn-reset" onclick="setAddOneTime(2,0)" style="font-size:11px;padding:3px 10px">2min</button>
+        <button class="btn-reset" onclick="setAddOneTime(3,0)" style="font-size:11px;padding:3px 10px">3min</button>
+        <button class="btn-reset" onclick="setAddOneTime(5,0)" style="font-size:11px;padding:3px 10px">5min</button>
+        <button class="btn-reset" onclick="setAddOneTime(10,0)" style="font-size:11px;padding:3px 10px">10min</button>
+      </div>
+    </div>
+    <div class="modal-btns" style="margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--border)">
+      <button class="btn btn-ghost" style="padding:7px 16px;font-size:13px" onclick="closeAddOne()">cancelar</button>
+      <button class="btn btn-primary" style="padding:7px 16px;font-size:13px" onclick="confirmAddOne()"><i class="ti ti-plus"></i> registrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const COLORS = ['#7b6ef6','#3ecf8e','#f9a840','#f87171','#60a5fa','#a78bfa','#34d399','#fb923c','#e879f9','#2dd4bf'];
+
+const K_CONFIG   = 'qtm_config';
+const K_BADGE    = 'qtm_badge';
+const K_DISTRITO = 'qtm_distrito';
+const K_LOGS     = 'qtm_logs';
+
+let config = JSON.parse(localStorage.getItem(K_CONFIG) || 'null');
+let activeDistrito = localStorage.getItem(K_DISTRITO) || null;
+let activeBadge = localStorage.getItem(K_BADGE) || null;
+let logs = JSON.parse(localStorage.getItem(K_LOGS) || '[]');
+let timerInterval = null;
+let startTime = null;
+let startSlot = null;
+let elapsed = 0;
+let charts = {};
+let currentTab = 'fila';
+let spaceHeld = false;
+
+// setup temp state
+let setupDistritos = [];
+
+function init() {
+  updateDateChip();
+  setInterval(updateDateChip, 60000);
+  if (!config || !config.distritos || !config.distritos.length) {
+    document.getElementById('setupCta').style.display = 'block';
+    document.getElementById('dateChip2').textContent = document.getElementById('dateChip').textContent;
+  } else {
+    document.getElementById('mainApp').style.display = 'block';
+      if (!activeDistrito || !config.distritos.find(d => d.name === activeDistrito)) {
+      activeDistrito = config.distritos[0].name;
+    }
+    renderDistritos();
+    renderBadges();
+    renderStats();
+    renderLog();
+    renderCharts();
+  }
+}
+
+function updateDateChip() {
+  const d = new Date();
+  const days = ['dom','seg','ter','qua','qui','sex','sáb'];
+  const txt = `${days[d.getDay()]} ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('dateChip').textContent = txt;
+  const d2 = document.getElementById('dateChip2');
+  if (d2) d2.textContent = txt;
+}
+
+function getSlot(d) {
+  const h = d.getHours(), m = d.getMinutes();
+  return `${String(h).padStart(2,'0')}:${m < 30 ? '00' : '30'}`;
+}
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function getWeek(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const jan4 = new Date(d.getFullYear(), 0, 4);
+  const w = Math.ceil(((d - jan4) / 86400000 + jan4.getDay() + 1) / 7);
+  return `${d.getFullYear()}-W${String(w).padStart(2,'0')}`;
+}
+function fmtTime(sec) {
+  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function getCurrentDistrito() {
+  return config.distritos.find(d => d.name === activeDistrito);
+}
+
+function renderDistritos() {
+  const tabs = document.getElementById('distritoTabs');
+  tabs.innerHTML = config.distritos.map(d =>
+    `<button class="distrito-tab${activeDistrito===d.name?' active':''}" onclick="selectDistrito('${d.name}')">${d.name}</button>`
+  ).join('');
+  document.getElementById('activeDistritoLabel').textContent = activeDistrito || '—';
+  document.getElementById('headerSub').textContent = `${activeDistrito || '—'} — monitorias`;
+}
+
+function selectDistrito(name) {
+  activeDistrito = name;
+  activeBadge = null;
+  localStorage.setItem(K_DISTRITO, name);
+  localStorage.removeItem(K_BADGE);
+  renderDistritos();
+  renderBadges();
+  document.getElementById('activeBadgeLabel').textContent = 'nenhuma';
+  document.getElementById('btnStart').disabled = true;
+}
+
+function renderBadges() {
+  const dist = getCurrentDistrito();
+  if (!dist) { document.getElementById('badgeGrid').innerHTML = ''; return; }
+  document.getElementById('badgeGrid').innerHTML = dist.badges.map(b =>
+    `<button class="badge-btn${activeBadge===b?' active':''}" onclick="selectBadge('${b.replace(/'/g,"\\'")}')">
+      <span style="display:block;font-size:10px;color:var(--hint);margin-bottom:2px;font-family:'JetBrains Mono',monospace">${activeDistrito}</span>${b}
+    </button>`
+  ).join('');
+}
+
+function selectBadge(b) {
+  activeBadge = b;
+  localStorage.setItem(K_BADGE, b);
+  renderBadges();
+  document.getElementById('activeBadgeLabel').textContent = b;
+  if (!timerInterval) document.getElementById('btnStart').disabled = false;
+}
+
+function startTimer() {
+  if (!activeBadge || timerInterval) return;
+  startTime = new Date();
+  startSlot = getSlot(startTime);
+  elapsed = 0;
+  document.getElementById('slotDisplay').textContent = startSlot;
+  document.getElementById('timerDisplay').classList.add('running');
+  document.getElementById('btnStart').disabled = true;
+  document.getElementById('btnStop').disabled = false;
+  document.getElementById('btnCancel').disabled = false;
+  timerInterval = setInterval(() => {
+    elapsed = Math.floor((Date.now() - startTime) / 1000);
+    document.getElementById('timerDisplay').textContent = fmtTime(elapsed);
+  }, 500);
+}
+function cancelTimer() {
+  if (!timerInterval) return;
+  clearInterval(timerInterval); timerInterval = null;
+  elapsed = 0; startTime = null;
+  document.getElementById('timerDisplay').textContent = '00:00:00';
+  document.getElementById('timerDisplay').classList.remove('running');
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('btnCancel').disabled = true;
+  document.getElementById('btnStart').disabled = !activeBadge;
+}
+function stopTimer() {
+  if (!timerInterval) return;
+  clearInterval(timerInterval); timerInterval = null;
+  const sec = Math.floor((Date.now() - startTime) / 1000);
+  const entry = {
+    date: todayKey(), slot: startSlot,
+    distrito: activeDistrito, fila: activeBadge,
+    duration_sec: sec, ts_min: parseFloat((sec/60).toFixed(2)),
+    recorded_at: new Date().toISOString()
+  };
+  logs.push(entry);
+  localStorage.setItem(K_LOGS, JSON.stringify(logs));
+  document.getElementById('timerDisplay').textContent = '00:00:00';
+  document.getElementById('timerDisplay').classList.remove('running');
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('btnCancel').disabled = true;
+  document.getElementById('btnStart').disabled = !activeBadge;
+  renderStats(); renderLog(); renderCharts();
+  showToast(`registrado — ${fmtTime(sec)}`);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.code === 'Space') { e.preventDefault(); spaceHeld = true; }
+  if (spaceHeld && e.code === 'ArrowUp') { e.preventDefault(); if (!timerInterval && activeBadge) startTimer(); }
+  if (spaceHeld && e.code === 'ArrowDown') { e.preventDefault(); if (timerInterval) stopTimer(); }
+  if (e.code === 'Escape') { if (timerInterval) cancelTimer(); closeConfirm(); closeSetup(); }
+});
+document.addEventListener('keyup', e => { if (e.code === 'Space') spaceHeld = false; });
+
+function confirmReset() { document.getElementById('confirmModal').classList.add('show'); }
+function closeConfirm() { document.getElementById('confirmModal').classList.remove('show'); }
+function resetDay() {
+  logs = logs.filter(l => l.date !== todayKey());
+  localStorage.setItem(K_LOGS, JSON.stringify(logs));
+  closeConfirm();
+  renderStats(); renderLog(); renderCharts();
+  showToast('registros do dia zerados');
+}
+
+function todayLogs() { return logs.filter(l => l.date === todayKey()); }
+
+function renderStats() {
+  const tl = todayLogs();
+  const total = tl.reduce((a,l) => a + l.duration_sec, 0);
+  document.getElementById('statCases').textContent = tl.length;
+  document.getElementById('statTs').textContent =
+    total < 60 ? `${total}s` : total < 3600 ? `${Math.round(total/60)}m` : `${(total/3600).toFixed(1)}h`;
+  document.getElementById('statAvg').textContent = tl.length ? `${(total/60/tl.length).toFixed(1)}` : '—';
+  const last = tl[tl.length-1];
+  document.getElementById('statLast').textContent = last ? last.fila : '—';
+}
+
+function renderLog() {
+  const tl = todayLogs();
+  document.getElementById('logCount').textContent = `${tl.length} ${tl.length===1?'entrada':'entradas'}`;
+  if (!tl.length) { document.getElementById('logWrap').innerHTML = '<div class="empty">nenhum registro ainda hoje</div>'; return; }
+  const rows = [...tl].reverse().map(l => {
+    const tsColor = l.duration_sec < 60 ? 'color:var(--amber)' : l.duration_sec > 600 ? 'color:var(--red)' : 'color:var(--green)';
+    return `<tr>
+      <td><span class="dist-tag">${l.distrito}</span></td>
+      <td><span class="fila-tag">${l.fila}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace">${l.slot}</td>
+      <td style="font-family:'JetBrains Mono',monospace;${tsColor};font-weight:500">${fmtTime(l.duration_sec)}</td>
+      <td style="font-family:'JetBrains Mono',monospace">${l.ts_min.toFixed(1)}min</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('logWrap').innerHTML = `
+    <table class="log-table">
+      <thead><tr><th>dist.</th><th>fila</th><th>slot</th><th>duração</th><th>TS</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCharts();
+}
+function allBadges() {
+  if (!config) return [];
+  return config.distritos.flatMap(d => d.badges);
+}
+function renderCharts() {
+  const area = document.getElementById('chartArea');
+  if (!logs.length) { area.innerHTML = '<div class="empty">os gráficos aparecem após o primeiro registro</div>'; return; }
+  if (currentTab === 'fila') renderFilaChart(area);
+  else renderSemanaChart(area);
+}
+function renderFilaChart(area) {
+  const tl = todayLogs();
+  const badges = allBadges();
+  const totals = {}; badges.forEach(b => totals[b] = 0);
+  tl.forEach(l => totals[l.fila] = (totals[l.fila]||0) + l.ts_min);
+  const active = badges.filter(b => totals[b] > 0);
+  if (!active.length) { area.innerHTML = '<div class="empty">nenhum registro hoje ainda</div>'; return; }
+  area.innerHTML = `<div style="position:relative;width:100%;height:${active.length*44+40}px"><canvas id="cFila"></canvas></div>`;
+  if (charts.fila) charts.fila.destroy();
+  charts.fila = new Chart(document.getElementById('cFila'), {
+    type: 'bar',
+    data: { labels: active, datasets: [{ data: active.map(b => parseFloat(totals[b].toFixed(1))), backgroundColor: COLORS, borderRadius: 4, borderSkipped: false }] },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.raw} min` } } },
+      scales: { x: { grid: { color: 'rgba(123,110,246,.1)' }, ticks: { color: '#55556a', font: { size: 11 }, callback: v => `${v}m` } }, y: { grid: { display: false }, ticks: { color: '#8888a0', font: { size: 11 } } } }
+    }
+  });
+}
+function renderSemanaChart(area) {
+  const byWeek = {};
+  const badges = allBadges();
+  logs.forEach(l => {
+    const w = getWeek(l.date);
+    if (!byWeek[w]) byWeek[w] = {};
+    byWeek[w][l.fila] = (byWeek[w][l.fila]||0) + l.ts_min;
+  });
+  const weeks = Object.keys(byWeek).sort();
+  if (!weeks.length) { area.innerHTML = '<div class="empty">sem dados semanais ainda</div>'; return; }
+  area.innerHTML = `<div style="position:relative;width:100%;height:240px"><canvas id="cSemana"></canvas></div>`;
+  if (charts.semana) charts.semana.destroy();
+  charts.semana = new Chart(document.getElementById('cSemana'), {
+    type: 'bar',
+    data: { labels: weeks, datasets: badges.map((b,i) => ({ label: b, data: weeks.map(w => parseFloat((byWeek[w]?.[b]||0).toFixed(1))), backgroundColor: COLORS[i % COLORS.length], borderRadius: 3, borderSkipped: false })) },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { stacked: true, grid: { display: false }, ticks: { color: '#55556a', font: { size: 11 } } }, y: { stacked: true, grid: { color: 'rgba(123,110,246,.1)' }, ticks: { color: '#55556a', font: { size: 11 }, callback: v => `${v}m` } } }
+    }
+  });
+}
+
+
+// --- SETUP ---
+function openSetup() {
+  setupDistritos = config ? JSON.parse(JSON.stringify(config.distritos)) : [];
+  renderSetupList();
+  document.getElementById('setupModal').classList.add('show');
+  document.getElementById('setupCta').style.display = 'none';
+}
+function closeSetup() {
+  document.getElementById('setupModal').classList.remove('show');
+  if (!config || !config.distritos.length) {
+    document.getElementById('setupCta').style.display = 'block';
+  }
+}
+function renderSetupList() {
+  const list = document.getElementById('setupDistritoList');
+  if (!setupDistritos.length) { list.innerHTML = ''; return; }
+  list.innerHTML = setupDistritos.map((d, i) => `
+    <div class="distrito-item">
+      <div class="distrito-item-header">
+        <input class="input" style="font-size:13px;padding:5px 8px" value="${d.name}" oninput="setupDistritos[${i}].name=this.value" placeholder="Nome do distrito (ex: MA)">
+        <button class="btn-remove" onclick="removeDistrito(${i})"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="label" style="margin-bottom:4px">badges (uma por linha)</div>
+      <textarea class="badges-input" oninput="setupDistritos[${i}].badgesRaw=this.value">${d.badgesRaw || d.badges.join('\n')}</textarea>
+      <div class="badges-hint">Digite cada badge em uma linha separada</div>
+    </div>`
+  ).join('');
+}
+function addDistrito() {
+  setupDistritos.push({ name: '', badges: [], badgesRaw: '' });
+  renderSetupList();
+  const inputs = document.querySelectorAll('#setupDistritoList .input');
+  if (inputs.length) inputs[inputs.length-1].focus();
+}
+function removeDistrito(i) {
+  setupDistritos.splice(i, 1);
+  renderSetupList();
+}
+function saveSetup() {
+  const valid = setupDistritos.filter(d => d.name.trim());
+  if (!valid.length) { showToast('adicione pelo menos um distrito'); return; }
+  const distritos = valid.map(d => ({
+    name: d.name.trim().toUpperCase(),
+    badges: (d.badgesRaw || d.badges.join('\n')).split('\n').map(b => b.trim()).filter(Boolean),
+    badgesRaw: d.badgesRaw || d.badges.join('\n')
+  }));
+  config = { distritos };
+  localStorage.setItem(K_CONFIG, JSON.stringify(config));
+  if (!activeDistrito || !config.distritos.find(d => d.name === activeDistrito)) {
+    activeDistrito = config.distritos[0].name;
+    localStorage.setItem(K_DISTRITO, activeDistrito);
+  }
+  activeBadge = null;
+  localStorage.removeItem(K_BADGE);
+  document.getElementById('setupModal').classList.remove('show');
+  document.getElementById('setupCta').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  renderDistritos();
+  renderBadges();
+  renderStats();
+  renderLog();
+  renderCharts();
+  showToast('configurações salvas');
+}
+
+function openAddOne() {
+  const dist = getCurrentDistrito();
+  const sel = document.getElementById('addOneFila');
+  sel.innerHTML = '<option value="">selecione a fila...</option>';
+  if (dist) {
+    dist.badges.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b; opt.textContent = b;
+      if (b === activeBadge) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+  document.getElementById('addOneMin').value = 2;
+  document.getElementById('addOneSec').value = 0;
+  document.getElementById('addOneModal').classList.add('show');
+}
+function closeAddOne() {
+  document.getElementById('addOneModal').classList.remove('show');
+}
+function setAddOneTime(min, sec) {
+  document.getElementById('addOneMin').value = min;
+  document.getElementById('addOneSec').value = sec;
+}
+function confirmAddOne() {
+  const fila = document.getElementById('addOneFila').value;
+  const min = parseInt(document.getElementById('addOneMin').value) || 0;
+  const sec = parseInt(document.getElementById('addOneSec').value) || 0;
+  const totalSec = min * 60 + sec;
+  if (!fila) { showToast('selecione uma fila'); return; }
+  if (totalSec <= 0) { showToast('informe um tempo válido'); return; }
+  const entry = {
+    date: todayKey(),
+    slot: getSlot(new Date()),
+    distrito: activeDistrito,
+    fila,
+    duration_sec: totalSec,
+    ts_min: parseFloat((totalSec/60).toFixed(2)),
+    recorded_at: new Date().toISOString(),
+    manual: true
+  };
+  logs.push(entry);
+  localStorage.setItem(K_LOGS, JSON.stringify(logs));
+  closeAddOne();
+  renderStats(); renderLog(); renderCharts();
+  showToast(`+1 registrado — ${min}min ${sec > 0 ? sec+'s' : ''}`);
+}
+
+function exportCSV(scope) {
+  const data = scope === 'today' ? logs.filter(l => l.date === todayKey()) : logs;
+  if (!data.length) { showToast('nenhum dado para exportar'); return; }
+  const headers = ['data','slot','distrito','fila','duracao_seg','ts_min','registrado_em'];
+  const rows = data.map(l => headers.map(h => {
+    const v = l[h] !== undefined ? l[h] : '';
+    return typeof v === 'string' && v.includes(',') ? `"${v}"` : v;
+  }).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = scope === 'today' ? todayKey() : 'completo';
+  a.href = url; a.download = `quality-timer-${date}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exportado');
+}
+
+init();
+</script>
+</body>
+</html>
