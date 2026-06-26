@@ -547,16 +547,21 @@ function renderCharts() {
 }
 function renderFilaChart(area) {
   const tl = todayLogs();
-  const badges = allBadges();
-  const totals = {}; badges.forEach(b => totals[b] = 0);
-  tl.forEach(l => totals[l.fila] = (totals[l.fila]||0) + l.ts_min);
-  const active = badges.filter(b => totals[b] > 0);
+  // build keys as "DISTRITO · fila" to avoid duplicates across districts
+  const totals = {};
+  tl.forEach(l => {
+    const key = `${l.distrito} · ${l.fila}`;
+    totals[key] = (totals[key]||0) + l.ts_min;
+  });
+  const active = Object.keys(totals).filter(k => totals[k] > 0)
+    .sort((a,b) => totals[b] - totals[a]);
   if (!active.length) { area.innerHTML = '<div class="empty">nenhum registro hoje ainda</div>'; return; }
+  const bgColors = active.map((_, i) => COLORS[i % COLORS.length]);
   area.innerHTML = `<div style="position:relative;width:100%;height:${active.length*44+40}px"><canvas id="cFila"></canvas></div>`;
   if (charts.fila) charts.fila.destroy();
   charts.fila = new Chart(document.getElementById('cFila'), {
     type: 'bar',
-    data: { labels: active, datasets: [{ data: active.map(b => parseFloat(totals[b].toFixed(1))), backgroundColor: COLORS, borderRadius: 4, borderSkipped: false }] },
+    data: { labels: active, datasets: [{ data: active.map(k => parseFloat(totals[k].toFixed(1))), backgroundColor: bgColors, borderRadius: 4, borderSkipped: false }] },
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.raw} min` } } },
       scales: { x: { grid: { color: 'rgba(123,110,246,.1)' }, ticks: { color: '#55556a', font: { size: 11 }, callback: v => `${v}m` } }, y: { grid: { display: false }, ticks: { color: '#8888a0', font: { size: 11 } } } }
@@ -565,19 +570,23 @@ function renderFilaChart(area) {
 }
 function renderSemanaChart(area) {
   const byWeek = {};
-  const badges = allBadges();
+  // collect all unique "DISTRITO · fila" keys
+  const allKeys = new Set();
   logs.forEach(l => {
     const w = getWeek(l.date);
+    const key = `${l.distrito} · ${l.fila}`;
+    allKeys.add(key);
     if (!byWeek[w]) byWeek[w] = {};
-    byWeek[w][l.fila] = (byWeek[w][l.fila]||0) + l.ts_min;
+    byWeek[w][key] = (byWeek[w][key]||0) + l.ts_min;
   });
+  const keys = Array.from(allKeys);
   const weeks = Object.keys(byWeek).sort();
   if (!weeks.length) { area.innerHTML = '<div class="empty">sem dados semanais ainda</div>'; return; }
   area.innerHTML = `<div style="position:relative;width:100%;height:240px"><canvas id="cSemana"></canvas></div>`;
   if (charts.semana) charts.semana.destroy();
   charts.semana = new Chart(document.getElementById('cSemana'), {
     type: 'bar',
-    data: { labels: weeks, datasets: badges.map((b,i) => ({ label: b, data: weeks.map(w => parseFloat((byWeek[w]?.[b]||0).toFixed(1))), backgroundColor: COLORS[i % COLORS.length], borderRadius: 3, borderSkipped: false })) },
+    data: { labels: weeks, datasets: keys.map((k,i) => ({ label: k, data: weeks.map(w => parseFloat((byWeek[w]?.[k]||0).toFixed(1))), backgroundColor: COLORS[i % COLORS.length], borderRadius: 3, borderSkipped: false })) },
     options: { responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: { x: { stacked: true, grid: { display: false }, ticks: { color: '#55556a', font: { size: 11 } } }, y: { stacked: true, grid: { color: 'rgba(123,110,246,.1)' }, ticks: { color: '#55556a', font: { size: 11 }, callback: v => `${v}m` } } }
